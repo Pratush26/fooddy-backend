@@ -1,0 +1,25 @@
+{
+  "name": "fooddy-backend",
+  "version": "1.0.0",
+  "description": "This is a food ordering website's backend project",
+  "keywords": [
+    "fooddy",
+    "food",
+    "order"
+  ],
+  "license": "ISC",
+  "author": "Pratush Barua",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "npx nodemon index.js"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "mongoose": "^9.1.5"
+  }
+}
