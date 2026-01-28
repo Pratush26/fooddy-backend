@@ -4,7 +4,7 @@ import { User } from "../models/user.js";
 export const registerUser = async (req, res) => {
     try {
         await connectDB();
-        const { name, email, password, photo } = req.body;
+        const { name, email, password, photo, phone, address } = req.body;
 
         if (!name || !email || !password || !photo)
             return res.status(400).json({ message: "All fields are required" });
@@ -13,13 +13,9 @@ export const registerUser = async (req, res) => {
         if (existingUser)
             return res.status(409).json({ message: "User already exists" });
 
-        const user = await User.create({ name, email, password, photo });
+        const user = await User.create({ name, email, password, photo, phone, address });
 
-        const userObj = user.toObject();
-        delete userObj.password;
-        delete userObj.refreshToken;
-
-        return res.status(201).json({ user: userObj, message: "User registered successfully" });
+        return res.status(201).json({ user, message: "User registered successfully" });
 
     } catch (err) {
         console.error(err);
