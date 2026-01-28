@@ -1,5 +1,5 @@
-import { connectDB } from "../lib/connectDB";
-import { Food } from "../models/food";
+import { connectDB } from "../lib/connectDB.js";
+import { Food } from "../models/food.js";
 
 export const getFood = (req, res) => {
     res.json({ success: true, message: "Express app is running 🚀" });
