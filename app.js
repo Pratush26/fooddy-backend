@@ -17,4 +17,9 @@ app.use(express.urlencoded({extended: true, limit: "16kb"}))
 app.use(express.static("public"))
 
 import homeRoutes from "./routes/home.js";
+import foodRoutes from "./routes/food.js";
+import userRoutes from "./routes/user.js";
+
 app.use("/", homeRoutes);
+app.use("/food", foodRoutes);
+app.use("/user", userRoutes);
