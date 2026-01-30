@@ -2,8 +2,16 @@ import { connectDB } from "../lib/connectDB.js";
 import { Category } from "../models/category.js";
 import { Food } from "../models/food.js";
 
-export const getFood = (req, res) => {
-    res.json({ success: true, message: "Express app is running 🚀" });
+export const getFood = async (req, res) => {
+    try {
+        await connectDB();
+        const food = await Food.findOne({_id: req?.params?.id});
+        return res.status(201).json({ food, message: "successfully get data" });
+
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ foods: [], message: "Server error" });
+    }
 };
 export const getFoods = async (req, res) => {
     try {

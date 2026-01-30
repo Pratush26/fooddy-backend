@@ -31,16 +31,15 @@ export const loginUser = async (req, res) => {
     try {
         await connectDB();
         const { email, password } = req.body;
-        if (!email || !password)
-            return res.status(400).json({ message: "Email and password is required" });
+        if (!email || !password) return res.status(400).json({ message: "Email and password is required" });
 
-        const user = await User.findOne({ email }).select("+password");
-        if (!user)
-            return res.status(404).json({ message: "User not Found!" });
+        if (!process.env.ACCESS_TOKEN_SECRET || !process.env.REFRESH_TOKEN_SECRET) return res.status(500).json({ message: "Server misconfigured: missing token secrets" });
+
+        const user = await User.findOne({ email }).select("+password +refreshToken");
+        if (!user) return res.status(404).json({ message: "User not Found!" });
 
         const ok = await user.isPasswordCorrect(password);
-        if (!ok)
-            return res.status(401).json({ message: "Email or password is wrong" });
+        if (!ok) return res.status(401).json({ message: "Email or password is wrong" });
 
         const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(user._id);
 
@@ -50,7 +49,9 @@ export const loginUser = async (req, res) => {
 
         const cookieOpts = {
             httpOnly: true,
-            secure: true
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+            path: "/"
         };
 
         return res
@@ -58,31 +59,34 @@ export const loginUser = async (req, res) => {
             .cookie("accessToken", accessToken, { ...cookieOpts, maxAge: 24 * 60 * 60 * 1000 })
             .cookie("refreshToken", refreshToken, { ...cookieOpts, maxAge: 7 * 24 * 60 * 60 * 1000 })
             .json({ user: userObj, message: "User logged in successfully" });
+    } catch (err) {
+        console.error("LOGIN ERROR:", err);
+
+        return res.status(500).json({
+            message: "Server error",
+            error: err?.message || String(err),
+        });
+    }
+};
+
+export const logoutUser = async (req, res) => {
+    try {
+        await connectDB();
+        await User.findByIdAndUpdate(req.user._id, { $unset: { refreshToken: 1 } });
+
+        const cookieOpts = {
+            httpOnly: true,
+            secure: true
+        };
+
+        return res
+            .status(200)
+            .clearCookie("accessToken", cookieOpts)
+            .clearCookie("refreshToken", cookieOpts)
+            .json({ message: "User logged out" });
 
     } catch (err) {
         console.error(err);
         return res.status(500).json({ message: "Server error" });
     }
-};
-
-export const logoutUser = async (req, res) => {
-  try {
-    await connectDB();
-    await User.findByIdAndUpdate(req.user._id, { $unset: { refreshToken: 1 } });
-
-    const cookieOpts = {
-      httpOnly: true,
-      secure: true
-    };
-
-    return res
-      .status(200)
-      .clearCookie("accessToken", cookieOpts)
-      .clearCookie("refreshToken", cookieOpts)
-      .json({ message: "User logged out" });
-      
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: "Server error" });
-  }
 };

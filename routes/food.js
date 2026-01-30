@@ -3,7 +3,7 @@ import { addFood, getCategories, getFood, getFoods } from "../controllers/food.j
 
 const router = Router();
 
-router.get("/", getFood);
+router.get("/id/:id", getFood);
 router.get("/all", getFoods);
 router.get("/categories", getCategories);
 router.post("/", addFood);
