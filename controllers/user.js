@@ -40,7 +40,7 @@ export const loginUser = async (req, res) => {
             return res.status(500).json({ message: "Server misconfigured: missing token secrets" });
         }
 
-        const user = await User.findOne({ email: normalizedEmail }).select("+password +refreshToken");
+        const user = await User.findOne({ email }).select("+password +refreshToken");
         if (!user) return res.status(404).json({ message: "User not Found!" });
 
         const ok = await user.isPasswordCorrect(password);
