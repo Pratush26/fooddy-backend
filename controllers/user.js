@@ -76,23 +76,27 @@ export const loginUser = async (req, res) => {
 };
 
 export const logoutUser = async (req, res) => {
-    try {
-        await connectDB();
-        await User.findByIdAndUpdate(req.user._id, { $unset: { refreshToken: 1 } });
+  try {
+    await connectDB();
+    const isProd = process.env.NODE_ENV === "production";
 
-        const cookieOpts = {
-            httpOnly: true,
-            secure: true
-        };
+    const cookieOpts = {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? "none" : "lax",
+      path: "/",
+    };
 
-        return res
-            .status(200)
-            .clearCookie("accessToken", cookieOpts)
-            .clearCookie("refreshToken", cookieOpts)
-            .json({ message: "User logged out" });
+    // If user exists, remove refresh token from DB
+    if (req.user?._id) await User.findByIdAndUpdate(req.user._id, { $unset: { refreshToken: 1 } });
 
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json({ message: "Server error" });
-    }
+    return res
+      .status(200)
+      .clearCookie("accessToken", cookieOpts)
+      .clearCookie("refreshToken", cookieOpts)
+      .json({ message: "User logged out" });
+  } catch (err) {
+    console.error("LOGOUT ERROR:", err);
+    return res.status(500).json({ message: "Server error", error: err?.message || String(err) });
+  }
 };

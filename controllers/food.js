@@ -5,7 +5,7 @@ import { Food } from "../models/food.js";
 export const getFood = async (req, res) => {
     try {
         await connectDB();
-        const food = await Food.findOne({_id: req?.params?.id});
+        const food = await Food.findOne({_id: req?.params?.id}).populate("category", "name -_id");
         return res.status(201).json({ food, message: "successfully get data" });
 
     } catch (err) {
@@ -17,7 +17,7 @@ export const getFoods = async (req, res) => {
     try {
         await connectDB();
         const query = {}
-        const foods = await Food.find(query);
+        const foods = await Food.find(query).select("title category description price photo unit").populate("category", "name -_id");
 
         return res.status(201).json({ foods, message: "successfully get data" });
 
