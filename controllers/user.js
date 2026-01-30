@@ -30,28 +30,35 @@ export const updateUser = (req, res) => {
 export const loginUser = async (req, res) => {
     try {
         await connectDB();
+
         const { email, password } = req.body;
-        if (!email || !password) return res.status(400).json({ message: "Email and password is required" });
+        if (!email || !password) {
+            return res.status(400).json({ message: "Email and password is required" });
+        }
 
-        if (!process.env.ACCESS_TOKEN_SECRET || !process.env.REFRESH_TOKEN_SECRET) return res.status(500).json({ message: "Server misconfigured: missing token secrets" });
+        if (!process.env.ACCESS_TOKEN_SECRET || !process.env.REFRESH_TOKEN_SECRET) {
+            return res.status(500).json({ message: "Server misconfigured: missing token secrets" });
+        }
 
-        const user = await User.findOne({ email }).select("+password +refreshToken");
+        const user = await User.findOne({ email: normalizedEmail }).select("+password +refreshToken");
         if (!user) return res.status(404).json({ message: "User not Found!" });
 
         const ok = await user.isPasswordCorrect(password);
         if (!ok) return res.status(401).json({ message: "Email or password is wrong" });
 
-        const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(user._id);
+        const accessToken = user.generateAccessToken();
+        const refreshToken = user.generateRefreshToken();
 
         const userObj = user.toObject();
         delete userObj.password;
         delete userObj.refreshToken;
 
+        const isProd = process.env.NODE_ENV === "production";
         const cookieOpts = {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-            path: "/"
+            secure: isProd,
+            sameSite: isProd ? "none" : "lax",
+            path: "/",
         };
 
         return res
@@ -61,7 +68,6 @@ export const loginUser = async (req, res) => {
             .json({ user: userObj, message: "User logged in successfully" });
     } catch (err) {
         console.error("LOGIN ERROR:", err);
-
         return res.status(500).json({
             message: "Server error",
             error: err?.message || String(err),
