@@ -5,8 +5,8 @@ import { Food } from "../models/food.js";
 export const getFood = async (req, res) => {
     try {
         await connectDB();
-        const food = await Food.findOne({_id: req?.params?.id}).populate("category", "name -_id");
-        return res.status(201).json({ food, message: "successfully get data" });
+        const food = await Food.findOne({ _id: req?.params?.id }).populate("category", "name -_id");
+        return res.status(200).json({ food, message: "successfully get data" });
 
     } catch (err) {
         console.error(err);
@@ -16,10 +16,44 @@ export const getFood = async (req, res) => {
 export const getFoods = async (req, res) => {
     try {
         await connectDB();
-        const query = {}
-        const foods = await Food.find(query).select("title category description price photo unit").populate("category", "name -_id");
+        const { limit = 0, category } = req.query;
 
-        return res.status(201).json({ foods, message: "successfully get data" });
+        const pipeline = [
+            {
+                $lookup: {
+                    from: "categories",
+                    localField: "category",
+                    foreignField: "_id",
+                    as: "category",
+                },
+            },
+            { $unwind: "$category" },
+        ];
+
+        if (category) {
+            pipeline.push({
+                $match: {
+                    "category.name": category.toLowerCase().trim(),
+                },
+            });
+        }
+
+        pipeline.push({
+            $project: {
+                title: 1,
+                description: 1,
+                price: 1,
+                photo: 1,
+                unit: 1,
+                category: {
+                    name: "$category.name",
+                },
+            },
+        });
+        if (Number(limit) > 0) pipeline.push({ $limit: Number(limit) });
+
+        const foods = await Food.aggregate(pipeline);
+        return res.status(200).json({ foods, message: "successfully get data" });
 
     } catch (err) {
         console.error(err);
