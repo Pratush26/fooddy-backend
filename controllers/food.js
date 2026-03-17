@@ -10,7 +10,7 @@ export const getFood = async (req, res) => {
 
     } catch (err) {
         console.error(err);
-        return res.status(500).json({ foods: [], message: "Server error" });
+        return res.status(500).json({ food: [], message: "Server error" });
     }
 };
 export const getFoods = async (req, res) => {
